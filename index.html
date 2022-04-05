@@ -1,0 +1,504 @@
+<!DOCTYPE html Student Name: Raiyan Jugbhery Student Number: 180686050 Student Email: jugb6050@mylaurier.ca Assignment Name: Final Project CP321>
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <h1>CP321 Project - Raiyan Jugbhery - 180686050 - jugb6050@mylaurier.ca</h1>
+    <style>
+        path.topo {
+        stroke-width: .4;
+        stroke: black;
+        }
+        
+    </style>
+</head>
+
+<body onload="NorthAmerica('Preceeding')" >
+    <h2>Task 1 + 2 (Implements Task 6 Requirement)</h2>
+    <div id="chloro"></div>
+    <h4>Select region and data subset in the dropdown menu above</h4>
+    <h8>Note only slight change is seen in color between current week and preceeding week options, due to  change in value being minimal between weeks except for specific countries while maintaining a feasible color scale</h8>
+    <div>
+            
+        <svg id="legend" height=100 width=400></svg>
+    </div>
+    
+    <div id = "secondChloro"></div>
+    
+    <script>
+        var allGroup = ["North America - Covid Cases Per Country in Preceeding Week(Last Week)", "North America - Covid Cases Per Country in Last 7 Days(Current Week)", "South America- Covid Cases Per Country in Preceeding Week(Last Week)", "South America - Covid Cases Per Country in Last 7 Days(Current Week)", "North + South America - Covid Cases Per Country in Preceeding Week(Last Week)", "North + South America - Covid Cases Per Country in Last 7 Days(Current Week)" ]
+        var dropdownButton = d3.select("#chloro")
+            .append('select')
+        // add the options to the button
+        dropdownButton // Add a buttonw
+          .selectAll('myOptions') // Next 4 lines add 6 options = 6 colors
+            .data(allGroup)
+          .enter()
+            .append('option')
+          .text(function (d) { return d; }) // text showed in the menu
+          .attr("value", function (d) { return d; }) // corresponding value returned by the button
+        
+        
+        // When the button is changed, run the updateChart function
+        dropdownButton.on("change", function(d) {
+
+        // recover the option that has been chosen
+        var selectedOption = d3.select(this).property("value")
+            
+
+        if (selectedOption == 'North America - Covid Cases Per Country in Last 7 Days(Current Week)'){
+            d3.select("svg").remove();
+            NorthAmerica('Current')
+        }
+        else if (selectedOption == 'North America - Covid Cases Per Country in Preceeding Week(Last Week)'){
+            d3.select("svg").remove();
+            NorthAmerica('Preceeding')
+        }
+        else if (selectedOption == 'South America - Covid Cases Per Country in Last 7 Days(Current Week)'){
+            d3.select("svg").remove();
+            SouthAmerica('Current')
+        }
+        else if (selectedOption == 'South America- Covid Cases Per Country in Preceeding Week(Last Week)'){
+            d3.select("svg").remove();
+            SouthAmerica('Preceeding')
+        }
+        else if (selectedOption == 'North + South America - Covid Cases Per Country in Last 7 Days(Current Week)') {
+            d3.select("svg").remove();
+            BothAmericas('Current')
+        }
+        else if (selectedOption == 'North + South America - Covid Cases Per Country in Preceeding Week(Last Week)') {
+            d3.select("svg").remove();
+            BothAmericas('Preceeding')
+        }
+        })
+        
+        
+        
+
+        
+    function NorthAmerica(input){
+            
+        if (input == 'Current'){
+            //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
+         .append("g")
+         .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(250)
+          .center([-100,69.5])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+            //setting color scale
+        var domain = [15, 45, 150, 500, 2500, 8500, 100000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesInCurrentWeek); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+  
+         svg.append("g")
+         .selectAll("path")
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each caountry
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0;
+             return colorScale(d.total);
+           })
+
+            });
+        }
+        
+         else if (input == 'Preceeding'){
+            //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
+         .append("g")
+         .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(250)
+          .center([-95,69.5])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+            //setting color scale
+        var domain = [15, 150, 500, 2500, 8500, 100000, 150000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesPreceeding); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+  
+         svg.append("g")
+         .selectAll("path")
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each caountry
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0;
+             return colorScale(d.total);
+           })
+
+            });
+        }           
+            
+        
+    }
+        
+        
+        
+        function SouthAmerica(input){
+            
+        if (input == 'Current'){
+            //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(500)
+          .center([-50,-25])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+       //setting color scale
+        var domain = [15, 45, 150, 500, 2500, 8500, 100000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesInCurrentWeek); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+         // do some stuff
+         svg.append("g")
+         .selectAll("path")
+
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each country
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0; 
+
+             return colorScale(d.total);
+           })
+
+            });
+        }
+            
+        else if (input == 'Preceeding'){
+            //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(500)
+          .center([-60,-25])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+       //setting color scale
+        var domain = [15, 150, 500, 2500, 8500, 100000, 150000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesPreceeding); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+         // do some stuff
+         svg.append("g")
+         .selectAll("path")
+
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each country
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0; 
+
+             return colorScale(d.total);
+           })
+
+            });
+        }           
+            
+    }
+        
+        
+        function BothAmericas(input){
+            
+        if (input == 'Current'){
+    //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(180)
+          .center([-50,50])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+       //setting color scale
+        var domain = [15, 45, 150, 500, 2500, 8500, 100000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesInCurrentWeek); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+         // do some stuff
+         svg.append("g")
+         .selectAll("path")
+
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each country
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0;
+             return colorScale(d.total);
+           })
+
+            });
+        }
+        else if (input == 'Preceeding'){
+    //setting margins
+        var margin = {top: 5, right: 5, bottom: 5, left: 5},
+            width = 750 - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
+        
+        // The svg selection from html id "map"
+        var svg = d3.select("#chloro").append("svg")
+        
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+        //building the projection
+        var projection = d3.geoMercator()
+          .scale(180)
+          .center([-70,50])
+          .translate([width / 2 - margin.left, height / 2]);
+        
+       //setting color scale
+        var domain = [15, 150, 500, 2500, 8500, 100000, 150000, 250000]
+        var labels = ["<1000", "1000-10000", "10000>"]
+        var range = ["#ffffff","#ffe2d9","#ffc5b4", "#ffa891", "#ff8b6e", "#fa6b4c", "#f1472a", "#e60000"]
+        var colorScale = d3.scaleThreshold()
+          .domain(domain)
+          .range(range);
+        
+        // retrieving the data
+        //attributes below for csvs
+        //Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+        var promises = []
+        var data = d3.map();
+        promises.push(d3.json("https://raw.githubusercontent.com/jugb6050/cp321project/main/nasageo.json"))
+        promises.push(d3.csv("https://raw.githubusercontent.com/jugb6050/cp321project/main/combined.csv", function(d) { data.set(d.CountryName, +d.CasesPreceeding); }))
+        myDataPromises = Promise.all(promises).then(function(my_data) {
+
+         var topo = my_data[0]
+         // do some stuff
+         svg.append("g")
+         .selectAll("path")
+
+         .data(topo.features)
+         .enter()
+         .append("path")
+         .attr("class", "topo")
+           // draw each country
+           .attr("d", d3.geoPath()
+             .projection(projection)
+           )
+           // set the color of each country
+           .attr("fill", function (d) {
+             //console.log(d.properties.name)
+             d.total = data.get(d.properties.name) || 0;
+             return colorScale(d.total);
+           })
+
+            });
+        }          
+        
+    }
+          var svg = d3.select("#legend")
+
+        //gradient scale
+        svg.append("text").attr("x", 140).attr("y", 30).text("LEGEND").style("font-size", "20px").attr("alignment-baseline","middle").style("stroke", "#f1472a").style("stroke-width", ".4")
+        svg.append("text").attr("x", 1).attr("y", 60).text("Tracked COV-19 Cases in the Last 7 Days in Each Country").style("font-size", "16px").attr("alignment-baseline","middle")
+        svg.append("text").attr("x", 5).attr("y", 80).text("0").style("font-size", "11px").attr("alignment-baseline","middle")
+        svg.append("text").attr("x", 310).attr("y", 80).text("25000").style("font-size", "11px").attr("alignment-baseline","middle")
+        var data = [{"color":"#ffffff","value":0},{"color":"#ffe2d9","value":30000},{"color":"#ffc5b4","value":60000},{"color":"#ffa891","value":12000},{"color":"#ff8b6e","value":180000},{"color":"#fa6b4c","value":21000},{"color":"#f1472a","value":23000},{"color":"#e60000","value":250000}];
+            
+        var extent = d3.extent(data, d => d.value);
+
+        var padding = 9;
+        var width = 320;
+        var innerWidth = width - (padding * 2);
+        var barHeight = 8;
+        var height = 28;
+
+        var xScale = d3.scaleLinear()
+            .range([0, innerWidth])
+            .domain(extent);
+
+
+        var svg = d3.select("body").append("svg").attr("width", width).attr("height", height).attr("transform","translate(10,-15)");;
+        var g = svg.append("g").attr("transform", "translate(" + padding + ", 0)");
+
+        var defs = svg.append("defs");
+        var linearGradient = defs.append("linearGradient").attr("id", "myGradient");
+        linearGradient.selectAll("stop")
+            .data(data)
+          .enter().append("stop")
+            .attr("offset", d => ((d.value - extent[0]) / (extent[1] - extent[0]) * 100) + "%")
+            .attr("stop-color", d => d.color);
+
+        g.append("rect")
+            .attr("width", innerWidth)
+            .attr("height", barHeight)
+            .style("fill", "url(#myGradient)");
+
+        g.append("g")
+            //.call(xAxis)
+          .select(".domain").remove();
+
+        
+    </script>
+    
+
+    
+</body>
+
+</html>
