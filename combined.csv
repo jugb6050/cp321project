@@ -1,4 +1,4 @@
-Country/Other,Cases in the last 7 days,Cases in the preceding 7 days,Weekly Case % Change,Cases in the last 7 days/1M pop,Deaths in the last 7 days,Deaths in the preceding 7 days,Weekly Death % Change,Deaths in the last 7 days/1M pop,Population
+CountryName,CasesInLast7Days,CasesInNext7Days,WeeklyCasePercentChange,CasesinLast7Days1MPop,DeathsInLast7Days,DeathInNext7Days,WeeklyDeathPercentChange,DeathsInLast7Days1MPop,Population
 Anguilla,38,21,81,2494,0,0,0,0.0,15235
 Antigua and Barbuda,12,7,71,121,0,0,0,0.0,99333
 Aruba,86,47,83,800,0,0,0,0.0,107551
